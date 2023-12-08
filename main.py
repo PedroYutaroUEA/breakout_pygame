@@ -2,6 +2,7 @@ import pygame
 import sys
 import random
 
+
 pygame.init()
 
 
@@ -101,6 +102,7 @@ def ball_punches_brick(match_value):
                                 ball_speed += 2
                                 ball_speed_x = ball_speed
                                 ball_speed_y = -ball_speed
+
                         else:
                             score_m1 += 1
                     else:

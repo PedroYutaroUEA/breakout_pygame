@@ -1,5 +1,7 @@
 import pygame
 import sys
+import random
+
 
 pygame.init()
 
@@ -51,24 +53,31 @@ def spawn_bricks():
 
 
 def ball_movement():
-    global ball_speed_x, ball_speed_y, score_m1
-    ball.x += ball_speed_x
+    global ball_speed, ball_speed_x, ball_speed_y, score_m1, ball_direction, num_of_collisions
+    ball.x += ball_speed_x * ball_direction
     ball.y += ball_speed_y
-    # Collision with walls
+    # collision with walls
     if ball.left <= WALL_WIDTH + BALL_SIZE or ball.right >= WIDTH - (WALL_WIDTH + BALL_SIZE):
         bounce_sound_effect.play()
         ball_speed_x *= -1
     if ball.top <= TOPPER:
         bounce_sound_effect.play()
         ball_speed_y *= -1
-    # Collision with paddle
+    # collision with paddle
     if ball.colliderect(paddle):
         bounce_sound_effect.play()
         ball_speed_y *= -1
+        if not ended_game:
+            ball_direction = (paddle.centerx - ball.centerx) / (BRICK_WIDTH / 2)
+            num_of_collisions += 1
+            if num_of_collisions == 4 or num_of_collisions == 12:
+                ball_speed += 2
+                ball_speed_x = ball_speed
+                ball_speed_y = -ball_speed
 
 
 def ball_punches_brick(match_value):
-    global ball_speed_y, score_m1, score_m2
+    global ball_speed, ball_speed_x, ball_speed_y, score_m1, score_m2, hit_orange, hit_red, ball
     for row in bricks:
         for brick, color in row:
             if ball.colliderect(brick):
@@ -81,8 +90,19 @@ def ball_punches_brick(match_value):
                             score_m1 += 3
                         elif color == orange:
                             score_m1 += 5
+                            if not hit_orange:
+                                hit_orange = True
+                                ball_speed += 2
+                                ball_speed_x = ball_speed
+                                ball_speed_y = -ball_speed
                         elif color == red:
                             score_m1 += 7
+                            if not hit_red:
+                                hit_red = True
+                                ball_speed += 2
+                                ball_speed_x = ball_speed
+                                ball_speed_y = -ball_speed
+
                         else:
                             score_m1 += 1
                     else:
@@ -97,13 +117,18 @@ def ball_punches_brick(match_value):
 
 
 def restore_ball():
-    global deaths, ball_speed_x, ball_speed_y
+    global deaths, ball_speed, ball_speed_x, ball_speed_y, ball_direction, num_of_collisions, hit_red, hit_orange
     if ball.top >= HEIGHT:
         deaths += 1
         ball.x = WIDTH // 2 - BALL_SIZE
         ball.y = HEIGHT // 2 - BALL_SIZE
+        ball_speed = 4
         ball_speed_x = ball_speed
         ball_speed_y = -ball_speed
+        ball_direction = round(random.uniform(-1.5, 1.5), 3)
+        num_of_collisions = 0
+        hit_orange = False
+        hit_red = False
 
 
 def scoring_matches():
@@ -158,15 +183,19 @@ score_text_r2 = game_text.get_rect(center=(WALL_WIDTH * 12, TOPPER * 6))
 # Paddle
 BRICK_WIDTH = 36
 BRICK_HEIGHT = 10
-paddle_speed = 10
+paddle_speed = 15
 paddle = pygame.Rect((WIDTH - BRICK_WIDTH) // 2, HEIGHT - BRICK_HEIGHT - HUD // 2, BRICK_WIDTH, BRICK_HEIGHT)
 
 # Ball
 BALL_SIZE = 5
-ball_speed = 5
+ball_speed = 4
 ball = pygame.Rect(WIDTH // 2 - BALL_SIZE, HEIGHT // 2 - BALL_SIZE, BALL_SIZE * 2, BALL_SIZE * 2)
 ball_speed_x = ball_speed
 ball_speed_y = -ball_speed
+ball_direction = round(random.uniform(-1.5, 1.5), 3)
+num_of_collisions = 0
+hit_orange = False
+hit_red = False
 
 # Bricks
 BRICK_ROWS = 8

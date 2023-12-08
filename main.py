@@ -17,8 +17,8 @@ def draw_screen():
     pygame.draw.rect(screen, blue, paddle)
     pygame.draw.rect(screen, white, ball)
     # draw HUD
-    screen.blit(game_font.render(f"{score_r1}", True, white), score_text_r1)
-    screen.blit(game_font.render(f"{score_r2}", True, white), score_text_r2)
+    screen.blit(game_font.render(f"{score_m1}", True, white), score_text_r1)
+    screen.blit(game_font.render(f"{score_m2}", True, white), score_text_r2)
     screen.blit(game_font.render(f"{deaths}", True, white), deaths_text)
     screen.blit(game_font.render(f"{players}", True, white), players_text)
     # draw bricks
@@ -45,13 +45,13 @@ def create_bricks():
 
 def spawn_bricks():
     if all(not row for row in bricks):
-        if score_r1 > 0 or score_r2 > 0:
+        if score_m1 > 0 or score_m2 > 0:
             scoring_sound_effect.play()
         create_bricks()
 
 
 def ball_movement():
-    global ball_speed_x, ball_speed_y, score_r1
+    global ball_speed_x, ball_speed_y, score_m1
     ball.x += ball_speed_x
     ball.y += ball_speed_y
     # Collision with walls
@@ -68,7 +68,7 @@ def ball_movement():
 
 
 def ball_punches_brick(match_value):
-    global ball_speed_y, score_r1, score_r2
+    global ball_speed_y, score_m1, score_m2
     for row in bricks:
         for brick, color in row:
             if ball.colliderect(brick):
@@ -78,22 +78,22 @@ def ball_punches_brick(match_value):
                     row.remove((brick, color))
                     if match_value == 1:
                         if color == green:
-                            score_r1 += 3
+                            score_m1 += 3
                         elif color == orange:
-                            score_r1 += 5
+                            score_m1 += 5
                         elif color == red:
-                            score_r1 += 7
+                            score_m1 += 7
                         else:
-                            score_r1 += 1
+                            score_m1 += 1
                     else:
                         if color == green:
-                            score_r2 += 3
+                            score_m2 += 3
                         elif color == orange:
-                            score_r2 += 5
+                            score_m2 += 5
                         elif color == red:
-                            score_r2 += 7
+                            score_m2 += 7
                         else:
-                            score_r2 += 1
+                            score_m2 += 1
 
 
 def restore_ball():
@@ -106,20 +106,20 @@ def restore_ball():
         ball_speed_y = -ball_speed
 
 
-def scoring_rounds():
-    global score_r1, score_r2, match
-    if score_r1 >= max_score_per_rounds:
-        score_r2 += int(score_r1 - max_score_per_rounds)
-        score_r1 = 0
+def scoring_matches():
+    global score_m1, score_m2, match
+    if score_m1 >= max_score_per_matches:
+        score_m2 += int(score_m1 - max_score_per_matches)
+        score_m1 = 0
         match = 2
-    if score_r2 >= max_score_per_rounds:
-        score_r2 = score_r1 = 0
+    if score_m2 >= max_score_per_matches:
+        score_m2 = score_m1 = 0
         match = 1
 
 
 def end_screen():
     global ended_game
-    if deaths > 3 or score_r2 >= max_score_per_rounds:
+    if deaths > 3 or score_m2 >= max_score_per_matches:
         paddle.width = WIDTH
         paddle.x = 0
         ended_game = True
@@ -179,9 +179,9 @@ ended_game = False
 
 # scores and matches
 max_score = 896
-max_score_per_rounds = max_score / 2
-score_r1 = 0
-score_r2 = 0
+max_score_per_matches = max_score / 2
+score_m1 = 0
+score_m2 = 0
 match = 1
 deaths = 0
 players = 1
@@ -202,7 +202,7 @@ while running:
     ball_movement()
     # scoring system
     ball_punches_brick(match)
-    scoring_rounds()
+    scoring_matches()
     # create bricks
     spawn_bricks()
     # Check if the ball missed the paddle

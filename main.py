@@ -1,163 +1,224 @@
 import pygame
 import sys
-import time
+
+pygame.init()
 
 
 def update_screen():
     pygame.display.flip()
-    clock.tick(60)
-
-
-def ball_movement():
-    # ball movement update
-    ball["body"].x += ball["x"] * ball["direction"].x
-    ball["body"].y += ball["y"] * ball["direction"].y
-    # ball collision with top
-    if ball["body"].top <= TOPPER:
-        ball["y"] *= -1
-        bounce_sound_effect.play()
-    # ball collision with right/left
-    if ball["body"].right >= WIDTH - WALL_WIDTH or ball["body"].left <= WALL_WIDTH:
-        ball["x"] *= -1
-        bounce_sound_effect.play()
-
-    # ball collision with player
-    if ball["body"].colliderect(player["body"]):
-        ball["direction"].x *= -1
-        ball["direction"].y = ((player["body"].centery - ball["body"].y) / (BRICK_HEIGHT / 2)) * -1
-        bounce_sound_effect.play()
-        ball["x"] += 0.25
-        ball["y"] += 0.25
-
-
-def player_movement():
-    player["body"].x += player["speed"]
-    if player["body"].left <= 0:
-        player["body"].left = 0
-    if player["body"].right <= WIDTH - BRICK_WIDTH:
-        print("test")
-        player["body"].bottom = WIDTH
-
-
-def ball_reset():
-    ball["body"].center = (WIDTH / 2, HEIGHT / 2)
-    ball["x"] *= 0
-    ball["y"] *= 0
-    ball["direction"].x = 1
-    ball["direction"].y = 0
-    player["body"].center = (WIDTH / 2, HEIGHT - (HEIGHT / 10))
+    pygame.time.Clock().tick(60)
 
 
 def draw_screen():
-    # show objects on screen
+    # draw bg and artificial wall
     screen.fill(white)
-    pygame.draw.rect(screen, bg, (WALL_WIDTH, TOPPER, WIDTH - (2 * WALL_WIDTH), HEIGHT))
-    pygame.draw.rect(screen, (10, 133, 194), player["body"])
-    pygame.draw.rect(screen, (255, 255, 255), ball["body"])
+    pygame.draw.rect(screen, black, (WALL_WIDTH, TOPPER, WIDTH - (2 * WALL_WIDTH), HEIGHT))
+    # draw objects
+    pygame.draw.rect(screen, blue, paddle)
+    pygame.draw.rect(screen, white, ball)
+    # draw HUD
+    screen.blit(game_font.render(f"{score_r1}", True, white), score_text_r1)
+    screen.blit(game_font.render(f"{score_r2}", True, white), score_text_r2)
+    screen.blit(game_font.render(f"{deaths}", True, white), deaths_text)
+    screen.blit(game_font.render(f"{players}", True, white), players_text)
     # draw bricks
-    pygame.draw.rect(screen, (196, 196, 41), yellow_brick["body"])
-    pygame.draw.rect(screen, (10, 135, 51), green_brick["body"])
-    pygame.draw.rect(screen, (198, 136, 10), orange_brick["body"])
-    pygame.draw.rect(screen, (166, 31, 10), red_brick["body"])
+    for row in bricks:
+        for brick, color in row:
+            pygame.draw.rect(screen, color, brick)
 
 
-# game setup
-pygame.init()
-clock = pygame.time.Clock()
-running = True
+def create_bricks():
+    for i in range(BRICK_ROWS):
+        row_bricks = []
+        for j in range(BRICK_COLS):
+            color = yellow
+            if i == 0 or i == 1:
+                color = red
+            elif i == 2 or i == 3:
+                color = orange
+            elif i == 4 or i == 5:
+                color = green
+            brick = pygame.Rect(j * (BRICK_WIDTH + 5) + 16, i * (BRICK_HEIGHT + 5) + HUD, BRICK_WIDTH, BRICK_HEIGHT)
+            row_bricks.append((brick, color))
+        bricks.append(row_bricks)
 
-# consts
-WIDTH = 700
-HEIGHT = 800
-BRICK_WIDTH = 50
-BRICK_HEIGHT = 20
+
+def spawn_bricks():
+    if all(not row for row in bricks):
+        if score_r1 > 0 or score_r2 > 0:
+            scoring_sound_effect.play()
+        create_bricks()
+
+
+def ball_movement():
+    global ball_speed_x, ball_speed_y, score_r1
+    ball.x += ball_speed_x
+    ball.y += ball_speed_y
+    # Collision with walls
+    if ball.left <= WALL_WIDTH + BALL_SIZE or ball.right >= WIDTH - (WALL_WIDTH + BALL_SIZE):
+        bounce_sound_effect.play()
+        ball_speed_x *= -1
+    if ball.top <= TOPPER:
+        bounce_sound_effect.play()
+        ball_speed_y *= -1
+    # Collision with paddle
+    if ball.colliderect(paddle):
+        bounce_sound_effect.play()
+        ball_speed_y *= -1
+
+
+def ball_punches_brick(match_value):
+    global ball_speed_y, score_r1, score_r2
+    for row in bricks:
+        for brick, color in row:
+            if ball.colliderect(brick):
+                bounce_sound_effect.play()
+                ball_speed_y *= -1
+                if not ended_game:
+                    row.remove((brick, color))
+                    if match_value == 1:
+                        if color == green:
+                            score_r1 += 3
+                        elif color == orange:
+                            score_r1 += 5
+                        elif color == red:
+                            score_r1 += 7
+                        else:
+                            score_r1 += 1
+                    else:
+                        if color == green:
+                            score_r2 += 3
+                        elif color == orange:
+                            score_r2 += 5
+                        elif color == red:
+                            score_r2 += 7
+                        else:
+                            score_r2 += 1
+
+
+def restore_ball():
+    global deaths, ball_speed_x, ball_speed_y
+    if ball.top >= HEIGHT:
+        deaths += 1
+        ball.x = WIDTH // 2 - BALL_SIZE
+        ball.y = HEIGHT // 2 - BALL_SIZE
+        ball_speed_x = ball_speed
+        ball_speed_y = -ball_speed
+
+
+def scoring_rounds():
+    global score_r1, score_r2, match
+    if score_r1 >= max_score_per_rounds:
+        score_r2 += int(score_r1 - max_score_per_rounds)
+        score_r1 = 0
+        match = 2
+    if score_r2 >= max_score_per_rounds:
+        score_r2 = score_r1 = 0
+        match = 1
+
+
+def end_screen():
+    global ended_game
+    if deaths > 3 or score_r2 >= max_score_per_rounds:
+        paddle.width = WIDTH
+        paddle.x = 0
+        ended_game = True
+
+
+# colors
+white = (255, 255, 255)
+black = (0, 0, 0)
+yellow = (255, 255, 0)
+green = (0, 255, 0)
+orange = (255, 165, 0)
+red = (255, 0, 0)
+blue = (10, 133, 194)
+
+# screen settings
+WIDTH = 600
+HEIGHT = 750
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Breakout")
+HUD = 150
+
+# wall size
 WALL_WIDTH = 10
 TOPPER = 20
-BALL_SIZE = 10
-
-# screen setup
-screen_size = (WIDTH, HEIGHT)
-screen = pygame.display.set_mode(screen_size)
-bg = (0, 0, 0)
-white = (255, 255, 255)
 
 # SFX effects and fonts
 bounce_sound_effect = pygame.mixer.Sound('assets/bounce.wav')
 scoring_sound_effect = pygame.mixer.Sound('assets/258020__kodack__arcade-bleep-sound.wav')
-game_font = pygame.font.Font("assets/PressStart2P.ttf", 80)
+game_font = pygame.font.Font("assets/PressStart2P.ttf", 40)
+game_text = game_font.render('000', True, white)
+score_text_r1 = game_text.get_rect(center=(WIDTH - (WALL_WIDTH * 12), TOPPER * 6))
+deaths_text = game_text.get_rect(center=(WIDTH - (WALL_WIDTH * 12), TOPPER * 3))
+players_text = game_text.get_rect(center=(WALL_WIDTH * 12, TOPPER * 3))
+score_text_r2 = game_text.get_rect(center=(WALL_WIDTH * 12, TOPPER * 6))
 
-# ball
-ball = {
-    "body": pygame.Rect(WIDTH / 2 - 15, HEIGHT / 2 - 15, BALL_SIZE, BALL_SIZE),
-    "x": 0,
-    "y": 0,
-    "speed": 10,
-    "direction": pygame.math.Vector2(1, 0)
-}
+# Paddle
+BRICK_WIDTH = 36
+BRICK_HEIGHT = 10
+paddle_speed = 10
+paddle = pygame.Rect((WIDTH - BRICK_WIDTH) // 2, HEIGHT - BRICK_HEIGHT - HUD // 2, BRICK_WIDTH, BRICK_HEIGHT)
 
-# bricks
-brick_shape = pygame.Rect((WIDTH / 2) - (BRICK_WIDTH / 2), HEIGHT, BRICK_WIDTH, BRICK_HEIGHT)
-yellow_brick = {"body": brick_shape, "value": 1, "punched": False}
-green_brick = {"body": brick_shape, "value": 3, "punched": False}
-orange_brick = {"body": brick_shape, "value": 5, "punched": False}
-red_brick = {"body": brick_shape, "value": 7, "punched": False}
+# Ball
+BALL_SIZE = 5
+ball_speed = 5
+ball = pygame.Rect(WIDTH // 2 - BALL_SIZE, HEIGHT // 2 - BALL_SIZE, BALL_SIZE * 2, BALL_SIZE * 2)
+ball_speed_x = ball_speed
+ball_speed_y = -ball_speed
 
-# player
-player = {"body": brick_shape, "speed": 0}
-A_FACTOR = 10
-players = 1
+# Bricks
+BRICK_ROWS = 8
+BRICK_COLS = 14
+bricks = []
 
-# scores and rounds
-round = 1
+# game control
+running = True
+ended_game = False
+
+# scores and matches
 max_score = 896
-max_score_per_round = max_score / 2
+max_score_per_rounds = max_score / 2
 score_r1 = 0
 score_r2 = 0
-b_score = 0
-score = 0
+match = 1
+deaths = 0
+players = 1
 
+# main loop
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_RIGHT:
-                player["speed"] += A_FACTOR
-            if event.key == pygame.K_LEFT:
-                player["speed"] -= A_FACTOR
-        if event.type == pygame.KEYUP:
-            if event.key == pygame.K_RIGHT:
-                player["speed"] -= A_FACTOR
-            if event.key == pygame.K_LEFT:
-                player["speed"] += A_FACTOR
-        if ball["x"] == 0 or ball["y"] == 0:
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
-                    ball["x"], ball["y"] = 10, 10
+            running = False
+    # player movement
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_LEFT] and paddle.left > (WALL_WIDTH * 2):
+        paddle.x -= paddle_speed
+    if keys[pygame.K_RIGHT] and paddle.right < WIDTH - (WALL_WIDTH * 2):
+        paddle.x += paddle_speed
 
-    player_movement()
+    # ball movement and collision
     ball_movement()
+    # scoring system
+    ball_punches_brick(match)
+    scoring_rounds()
+    # create bricks
+    spawn_bricks()
+    # Check if the ball missed the paddle
+    restore_ball()
 
-    # display screen
+    # Draw everything
     draw_screen()
-
-    player_text = game_font.render(f"{score}", False, white)
-    screen.blit(player_text, (WIDTH / 2 + 250, 50))
+    # update screen
     update_screen()
 
-# CHANGING ROUNDS
-if score_r1 > max_score_per_round:
-    round = 2
-    score_r2 += score_r1 - max_score_per_round
-    score_r1 = 0
-    scoring_sound_effect.play()
-elif score_r2 > max_score_per_round:
-    round = 1
-    score_r2 = 0
-    scoring_sound_effect.play()
-end_text = f"You win!"
-end_text_formatted = game_font.render(end_text, False, (255, 255, 255))
-screen.blit(end_text_formatted, (350, 300))
-pygame.display.update()
-time.sleep(4)
+    # show end screen
+    end_screen()
+
+# End of game
+pygame.display.flip()
+pygame.time.delay(3000)
+
+pygame.quit()
+sys.exit()

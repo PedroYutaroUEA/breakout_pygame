@@ -52,7 +52,7 @@ def spawn_bricks():
 
 
 def ball_movement():
-    global ball_speed, ball_speed_x, ball_speed_y, score_m1, ball_direction, num_of_collisions
+    global ball_speed, ball_speed_x, ball_speed_y, score_m1, ball_direction, num_of_collisions, last
     ball.x += ball_speed_x * ball_direction
     ball.y += ball_speed_y
     # collision with walls
@@ -64,15 +64,41 @@ def ball_movement():
         ball_speed_y *= -1
     # collision with paddle
     if ball.colliderect(paddle):
-        bounce_sound_effect.play()
-        ball_speed_y *= -1
-        if not ended_game:
-            ball_direction = (paddle.centerx - ball.centerx) / (BRICK_WIDTH / 2)
-            num_of_collisions += 1
-            if num_of_collisions == 4 or num_of_collisions == 12:
-                ball_speed += 2
-                ball_speed_x = ball_speed
-                ball_speed_y = -ball_speed
+        if now - last >= COOLDOWN:
+            last = pygame.time.get_ticks()
+            bounce_sound_effect.play()
+            ball_speed_y *= -1
+            if not ended_game:
+                ball_direction = (paddle.centerx - ball.centerx) / (BRICK_WIDTH / 2)
+                num_of_collisions += 1
+                if num_of_collisions == 4 or num_of_collisions == 12:
+                    ball_speed += 2
+                    ball_speed_x = ball_speed
+                    ball_speed_y = -ball_speed
+
+
+def speed_ball_by_brick(hit_color):
+    global ball_speed_x, ball_speed_y, ball_speed
+    if not hit_color:
+        hit_color = True
+        ball_speed += 2
+        ball_speed_x = ball_speed_y = ball_speed
+    return hit_color
+
+
+def score_by_match(score_m, color_type):
+    global hit_red, hit_orange
+    if color_type == green:
+        score_m += 3
+    elif color_type == orange:
+        score_m += 5
+        hit_orange = speed_ball_by_brick(hit_orange)
+    elif color_type == red:
+        score_m += 7
+        hit_red = speed_ball_by_brick(hit_red)
+    else:
+        score_m += 1
+    return score_m
 
 
 def speed_ball_by_brick(hit_color):
@@ -194,6 +220,8 @@ ball_direction = round(random.uniform(-1.5, 1.5), 3)
 num_of_collisions = 0
 hit_orange = False
 hit_red = False
+last = 0
+COOLDOWN = 600
 
 # Bricks
 BRICK_ROWS = 8
@@ -215,6 +243,7 @@ players = 1
 
 # main loop
 while running:
+    now = pygame.time.get_ticks()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False

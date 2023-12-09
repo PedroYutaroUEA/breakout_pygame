@@ -6,6 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="fbd3f3f7-338b-4cd5-b3d4-b5760fca7ffe" name="Changes" comment="Fixed bug where the ball could get stuck inside the paddle">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -58,7 +59,7 @@
     "nodejs_package_manager_path": "npm",
     "vue.rearranger.settings.migration": "true"
   }
-}]]></component>
+}</component>
   <component name="RunManager">
     <configuration name="main" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="breakout" />
@@ -103,7 +104,8 @@
       <workItem from="1701229669480" duration="708000" />
       <workItem from="1701828627960" duration="1569000" />
       <workItem from="1701900373712" duration="20823000" />
-      <workItem from="1701993682512" duration="20496000" />
+      <workItem from="1701993682512" duration="21268000" />
+      <workItem from="1702073419986" duration="7262000" />
     </task>
     <servers />
   </component>

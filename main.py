@@ -101,6 +101,30 @@ def score_by_match(score_m, color_type):
     return score_m
 
 
+def speed_ball_by_brick(hit_color):
+    global ball_speed_x, ball_speed_y, ball_speed
+    if not hit_color:
+        hit_color = True
+        ball_speed += 2
+        ball_speed_x = ball_speed_y = ball_speed
+    return hit_color
+
+
+def score_by_match(score_m, color_type):
+    global hit_red, hit_orange
+    if color_type == green:
+        score_m += 3
+    elif color_type == orange:
+        score_m += 5
+        hit_orange = speed_ball_by_brick(hit_orange)
+    elif color_type == red:
+        score_m += 7
+        hit_red = speed_ball_by_brick(hit_red)
+    else:
+        score_m += 1
+    return score_m
+
+
 def ball_punches_brick(match_value):
     global ball_speed, ball_speed_x, ball_speed_y, score_m1, score_m2, hit_orange, hit_red, ball
     for row in bricks:

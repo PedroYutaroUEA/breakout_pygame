@@ -1,4 +1,4 @@
-# breakout
+# breakout_pygame
 
 <h3>Membros:</h3>
 * Pedro Yutaro Mont Morency Nakamura - pymmn.snf23@uea.edu.br

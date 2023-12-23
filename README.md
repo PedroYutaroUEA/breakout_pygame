@@ -31,15 +31,15 @@ Make sure you have Python and Pygame installed on your machine.
 3. Try to break as many bricks as possible without letting the ball fall off the screen.
 
 ## Features
-1. Classic Breakout gameplay.
-2. Responsive paddle controls.
-3. Colorful and engaging graphics.
+- Classic Breakout gameplay.
+- Responsive paddle controls.
+- Colorful and engaging graphics.
 
 ## Contributing
 If you'd like to contribute to the development of this Breakout game, feel free to open an issue or submit a pull request ;)
 
 ## Acknowledgments
-<li>This game was created using the Pygame library.</li>
-<li>Inspired by classic arcade Breakout games.</li>
+- This game was created using the Pygame library.
+- Inspired by classic arcade Breakout games.</li>
 
 # Happy gaming!
